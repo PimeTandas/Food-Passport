@@ -21,8 +21,9 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Who may call what. Flow for every request:
- *   1. Is it /api/auth/**? Let it through (that's how you get a token).
- *   2. Otherwise there must be a valid "Authorization: Bearer <jwt>" header, or we answer 401.
+ *   1. Is it /api/auth/** or the health check? Let it through (that's how you get a token).
+ *   2. Any other /api/** needs a valid "Authorization: Bearer <jwt>" header, or we answer 401.
+ *   3. Anything else is the website's files, which are public.
  * Stateless: the server keeps no sessions - the token itself proves who you are.
  */
 @Configuration
@@ -34,8 +35,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // CSRF attacks rely on cookies; we use headers instead
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/error").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/api/auth/**", "/error", "/actuator/health").permitAll()
+                        .requestMatchers("/api/**").authenticated()
+                        // Everything else is the website itself (HTML/JS/CSS), which anyone may download.
+                        .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))
                 .build();
     }

@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars (git-ignored) and fill in.
+region           = "eu-west-2"
+hosted_zone_name = "example.com"
+subdomain        = "food"
+acme_email       = "you@example.com"
+
+# Set to false if your AWS account already has a GitHub OIDC provider
+# (IAM > Identity providers > token.actions.githubusercontent.com).
+create_github_oidc_provider = true

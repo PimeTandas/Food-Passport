@@ -51,6 +51,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- /actuator/health: lets the deploy script and load balancers ask "are you up?" -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <!-- Login: password hashing, plus validating the JWT sent with every request -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

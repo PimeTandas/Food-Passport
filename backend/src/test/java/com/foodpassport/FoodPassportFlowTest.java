@@ -84,6 +84,23 @@ class FoodPassportFlowTest {
                 .andExpect(status().isConflict());
     }
 
+    // ---------- serving the website ----------
+
+    @Test
+    void servesTheWebsiteAndHealthWithoutLogin() throws Exception {
+        // "/" is forwarded to index.html by Spring Boot's welcome page support (MockMvc doesn't follow forwards).
+        mvc.perform(get("/")).andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl("index.html"));
+        // A React route has no file behind it, so it gets index.html too.
+        mvc.perform(get("/countries/JP")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("test website")));
+        mvc.perform(get("/missing.png")).andExpect(status().isNotFound());
+        mvc.perform(get("/actuator/health")).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("UP"));
+        // ...but the API is still locked, and unknown API paths stay 404.
+        mvc.perform(get("/api/countries")).andExpect(status().isUnauthorized());
+        call(alice, get("/api/nope")).andExpect(status().isNotFound());
+    }
+
     // ---------- friends ----------
 
     @Test

@@ -1,0 +1,63 @@
+# What runs on the EC2 server. deploy.sh writes .env (secrets) next to this file, then runs
+# `docker compose up`. Memory limits keep the three containers inside a 1 GB t3.micro.
+name: foodpassport
+
+services:
+  postgres:
+    image: public.ecr.aws/docker/library/postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: foodpassport
+      POSTGRES_USER: foodpassport
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=20"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "foodpassport"]
+      interval: 5s
+      retries: 20
+    mem_limit: 256m
+
+  app:
+    image: ${APP_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/foodpassport
+      DB_USER: foodpassport
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      STORAGE_TYPE: s3
+      S3_BUCKET: ${PHOTOS_BUCKET}
+      AWS_REGION: ${AWS_REGION}
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      start_period: 60s
+      retries: 6
+    mem_limit: 512m
+
+  caddy:
+    image: public.ecr.aws/docker/library/caddy:2
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # HTTPS certificates live here - keep them across restarts
+      - caddy_config:/config
+    mem_limit: 64m
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

@@ -20,6 +20,11 @@ Stamp       personal: owner, auto date, own rating (1-5), own notes
             one per person at the meal, all pointing at the same FoodEntry
 ```
 
+## Deploying
+
+See [DEPLOY.md](DEPLOY.md): AWS (one EC2 server, Terraform), HTTPS via Caddy, and GitHub Actions
+that test every pull request and deploy every merge to `main`.
+
 ## Running everything locally
 
 You need Docker, Java 21 + Maven, and Node 20+. Use three terminals:
