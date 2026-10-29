@@ -20,6 +20,39 @@ Stamp       personal: owner, auto date, own rating (1-5), own notes
             one per person at the meal, all pointing at the same FoodEntry
 ```
 
+## Running everything locally
+
+You need Docker, Java 21 + Maven, and Node 20+. Use three terminals:
+
+```bash
+docker compose up -d                    # 1. PostgreSQL
+cd backend && mvn spring-boot:run       # 2. API on :8080
+cd frontend && npm install && npm run dev   # 3. website on http://localhost:5173
+```
+
+Open http://localhost:5173 (on your phone too, if it's on the same Wi-Fi: run `npm run dev -- --host`
+and use your computer's IP address).
+
+## Frontend (React + TypeScript + Vite)
+
+Phone-first website in `frontend/`. In development, Vite forwards every `/api/...` call to Spring on
+port 8080, so the browser only ever talks to one address.
+
+```
+src/
+  api/        types.ts (mirrors the Java DTOs) and client.ts (one fetch wrapper that adds the token)
+  auth/       AuthContext: who is logged in; the token is kept in localStorage
+  components/ Layout (top bar + login guard), InkStamp, StarRating, EntryFields, FriendPicker
+  pages/      AuthPage, PassportPage, CountryPage, NewStampPage, StampDetailPage
+  styles.css  design tokens at the top (colours, inks, radius)
+```
+
+Screens: sign up / log in → passport (summary, search, continent filters, country grid) →
+country page (its stamps) → stamp the page (dish, place, homemade, price, rating, notes, friends) →
+stamp detail (edit your review, edit the shared meal, change who was there, remove).
+
+Not in the website yet: managing friends (use the API) and photos.
+
 ## Backend (Spring Boot 3, Java 21)
 
 ```bash

@@ -205,7 +205,9 @@ class FoodPassportFlowTest {
         mvc.perform(post("/api/countries/ES/stamps").header("Authorization", "Bearer " + alice.token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dishName\": \"\", \"rating\": 9}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.dishName").value("must not be blank"))
+                .andExpect(jsonPath("$.errors.rating").exists());
         mvc.perform(post("/api/countries/ES/stamps").header("Authorization", "Bearer " + alice.token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dishName\": \"Paella\", \"price\": {\"amount\": 15, \"currency\": \"XYZ\"}}"))
