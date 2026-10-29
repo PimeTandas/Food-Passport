@@ -1,8 +1,10 @@
+import { LogOut } from 'lucide-react'
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { Crest } from './Crest'
 import { ThemeToggle } from './ThemeToggle'
 
-/** Top bar + the current page. Also the gatekeeper: no login, no passport. */
+/** Header + the current page. Also the gatekeeper: no login, no passport. */
 export function Layout() {
   const { user, loading, logout } = useAuth()
   const location = useLocation()
@@ -13,21 +15,21 @@ export function Layout() {
   return (
     <>
       <header className="topbar">
-        <Link to="/" className="brand">
-          <span className="brand-emblem" aria-hidden>🍜</span>
-          <span>Food Passport<small>BON APPÉTIT</small></span>
-        </Link>
-        <div className="topbar-actions">
-          <ThemeToggle />
-          <span className="avatar" title={`@${user.username}`} aria-label={`Logged in as ${user.username}`}>
-            {user.username[0]?.toUpperCase()}
-          </span>
-          <button className="btn ghost small" onClick={logout}>Log out</button>
+        <div className="topbar-inner">
+          <Link to="/" className="wordmark">
+            <Crest className="crest" />
+            <span>Food Passport</span>
+          </Link>
+          <div className="topbar-actions">
+            <ThemeToggle />
+            <button className="icon-btn" onClick={logout} aria-label="Log out" title="Log out">
+              <LogOut strokeWidth={1.75} />
+            </button>
+            <span className="avatar" title={`@${user.username}`}>{user.username[0]?.toUpperCase()}</span>
+          </div>
         </div>
       </header>
-      <main className="page">
-        <Outlet />
-      </main>
+      <Outlet />
     </>
   )
 }

@@ -18,13 +18,13 @@ public class UserController {
         this.users = users;
     }
 
-    public record MeResponse(Long id, String username, String email) {
+    public record MeResponse(Long id, String username, String email, java.time.Instant createdAt) {
     }
 
     @GetMapping("/me")
     public MeResponse me(@AuthenticationPrincipal Jwt jwt) {
         User user = users.findById(CurrentUser.id(jwt))
                 .orElseThrow(() -> ApiException.unauthorized("Account no longer exists"));
-        return new MeResponse(user.getId(), user.getUsername(), user.getEmail());
+        return new MeResponse(user.getId(), user.getUsername(), user.getEmail(), user.getCreatedAt());
     }
 }

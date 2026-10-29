@@ -48,8 +48,16 @@ src/
   theme.ts    light / dark / follow-the-device, remembered per browser
 ```
 
-The look is iOS-inspired: frosted header, large titles, segmented controls, and the ink stamps as the
-signature passport touch. Tap the round button in the header to switch theme.
+The look is a real passport, done with restraint:
+
+- **One brand colour** (passport burgundy) on warm paper neutrals; hairlines instead of shadows.
+- **Three typefaces, one job each** (self-hosted via Fontsource): EB Garamond for titles,
+  IBM Plex Sans for the interface, IBM Plex Mono for passport data such as `29 OCT 2026`.
+- **Passport details**: the home screen is your *data page* (holder, passport number, date of issue)
+  with a machine-readable zone that uses the real ICAO 9303 check-digit algorithm (`format.ts`);
+  every country has a page number; stamps have an ink texture made from SVG fractal noise.
+- **Icons** from Lucide; flags are the only emoji.
+- **Light and warm dark mode**: the header button cycles device → light → dark.
 
 Screens: sign up / log in → passport (summary, search, continent filters, country grid) →
 country page (its stamps) → stamp the page (dish, place, homemade, price, rating, notes, friends) →

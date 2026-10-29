@@ -72,7 +72,9 @@ class FoodPassportFlowTest {
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content(body("email", alice.username() + "@example.com", "password", "wrong-password")))
                 .andExpect(status().isUnauthorized());
-        call(alice, get("/api/users/me")).andExpect(jsonPath("$.username").value(alice.username()));
+        call(alice, get("/api/users/me"))
+                .andExpect(jsonPath("$.username").value(alice.username()))
+                .andExpect(jsonPath("$.createdAt").isString());
     }
 
     @Test

@@ -85,7 +85,7 @@ export const api = {
     request<TokenResponse>('POST', '/api/auth/register', { email, username, password }),
   login: (email: string, password: string) =>
     request<TokenResponse>('POST', '/api/auth/login', { email, password }),
-  me: () => request<UserSummary & { email: string }>('GET', '/api/users/me'),
+  me: () => request<UserSummary & { email: string; createdAt: string }>('GET', '/api/users/me'),
 
   passport: () => request<PassportSummary>('GET', '/api/passport'),
   countries: () => request<CountryListItem[]>('GET', '/api/countries'),

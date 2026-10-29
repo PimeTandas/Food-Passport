@@ -1,3 +1,4 @@
+import { ArrowLeft, Banknote, MapPin, PenLine, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
@@ -8,7 +9,7 @@ import { FriendPicker } from '../components/FriendPicker'
 import { InkStamp } from '../components/InkStamp'
 import { StarRating } from '../components/StarRating'
 import { ErrorMessage, Loading } from '../components/Status'
-import { formatDate, formatPrice } from '../format'
+import { formatPrice, passportDate } from '../format'
 import { useAsync } from '../useAsync'
 
 type Editing = 'none' | 'review' | 'entry' | 'companions'
@@ -27,93 +28,88 @@ export function StampDetailPage() {
   const entry = stamp.entry
   const isCreator = entry.createdBy?.id === user?.id
   const saved = (updated: Stamp) => { setData(updated); setEditing('none') }
+  const editButton = (section: Editing) =>
+    editing !== section && <button className="text-btn" onClick={() => setEditing(section)}>Edit</button>
 
   async function remove() {
-    const others = entry.with.length
-    const message = others > 0
+    const message = entry.with.length > 0
       ? 'Remove this stamp from your passport? The people you were with keep theirs.'
-      : 'Remove this stamp? This deletes the food entry too.'
+      : 'Remove this stamp? This deletes the meal too.'
     if (!window.confirm(message)) return
     await api.deleteStamp(stamp!.id)
     navigate(`/countries/${stamp!.country.code}`, { replace: true })
   }
 
   return (
-    <div className="stack" style={{ gap: 18 }}>
-      <Link to={`/countries/${stamp.country.code}`} className="muted small">← {stamp.country.flag} {stamp.country.name}</Link>
+    <main className="page">
+      <Link to={`/countries/${stamp.country.code}`} className="back"><ArrowLeft strokeWidth={1.75} />{stamp.country.name}</Link>
 
-      <div className="row" style={{ gap: 16, flexWrap: 'nowrap', alignItems: 'center' }}>
-        <div style={{ width: 130, flex: '0 0 auto' }}><InkStamp stamp={stamp} /></div>
+      <header className="detail-head">
         <div>
+          <div className="country-meta">{stamp.country.flag} {stamp.country.code} · {passportDate(stamp.stampedAt)}</div>
           <h1>{entry.dishName}</h1>
-          <span className="muted">Stamped {formatDate(stamp.stampedAt)}</span>
         </div>
-      </div>
+        <InkStamp stamp={stamp} />
+      </header>
 
-      <div className="detail-grid">
-        {/* ----- personal ----- */}
-        <section className="card stack">
-          <div className="spread">
-            <h2>Your take</h2>
-            {editing !== 'review' && <button className="btn ghost small" onClick={() => setEditing('review')}>Edit</button>}
-          </div>
-          {editing === 'review'
-            ? <ReviewForm stamp={stamp} onSaved={saved} onCancel={() => setEditing('none')} />
-            : (
-              <>
-                {stamp.rating ? <StarRating value={stamp.rating} /> : <span className="muted">Not rated yet</span>}
-                {stamp.notes ? <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{stamp.notes}</p> : <span className="muted small">No notes.</span>}
-              </>
-            )}
-        </section>
-
-        {/* ----- shared ----- */}
-        <section className="card stack">
-          <div className="spread">
-            <h2>The meal</h2>
-            {editing !== 'entry' && <button className="btn ghost small" onClick={() => setEditing('entry')}>Edit</button>}
-          </div>
-          {editing === 'entry'
-            ? <EntryForm stamp={stamp} onSaved={saved} onCancel={() => setEditing('none')} />
-            : (
-              <dl className="kv" style={{ margin: 0 }}>
-                <dt>Where</dt>
-                <dd>{entry.homemade ? '🏠 Homemade' : '🍽️ Eaten out'}{entry.placeName && ` · ${entry.placeName}`}</dd>
-                <dt>Price</dt>
-                <dd>{entry.price ? formatPrice(entry.price) : '—'}</dd>
-                <dt>Logged by</dt>
-                <dd>{isCreator ? 'You' : `@${entry.createdBy?.username ?? 'someone'}`}</dd>
-              </dl>
-            )}
-          {editing !== 'entry' && entry.with.length > 0 && (
-            <p className="muted small" style={{ margin: 0 }}>Shared with everyone who was there: edits show up for them too.</p>
+      <section className="detail-section">
+        <div className="spread"><h2>Your verdict</h2>{editButton('review')}</div>
+        {editing === 'review'
+          ? <ReviewForm stamp={stamp} onSaved={saved} onCancel={() => setEditing('none')} />
+          : (
+            <>
+              {stamp.rating ? <StarRating value={stamp.rating} /> : <p className="faint">Not rated yet.</p>}
+              {stamp.notes && <p className="notes">“{stamp.notes}”</p>}
+            </>
           )}
-        </section>
+      </section>
 
-        <section className="card stack">
-          <div className="spread">
-            <h2>Who was there</h2>
-            {isCreator && editing !== 'companions' &&
-              <button className="btn ghost small" onClick={() => setEditing('companions')}>Edit</button>}
-          </div>
-          {editing === 'companions'
-            ? <CompanionsForm stamp={stamp} onSaved={saved} onCancel={() => setEditing('none')} />
-            : entry.with.length === 0
-              ? <span className="muted">Just you.</span>
-              : (
-                <div className="row">
-                  {entry.with.map((u) => (
-                    <span key={u.id} className="person">
-                      <span className="avatar">{u.username[0]?.toUpperCase()}</span>@{u.username}
-                    </span>
-                  ))}
-                </div>
-              )}
-        </section>
-      </div>
+      <section className="detail-section">
+        <div className="spread"><h2>The meal</h2>{editButton('entry')}</div>
+        {editing === 'entry'
+          ? <EntryForm stamp={stamp} onSaved={saved} onCancel={() => setEditing('none')} />
+          : (
+            <dl className="facts">
+              <div className="fact">
+                <MapPin strokeWidth={1.5} aria-hidden />
+                <div><dt>{entry.homemade ? 'Homemade' : 'Eaten out'}</dt><dd>{entry.placeName ?? 'No place noted'}</dd></div>
+              </div>
+              <div className="fact">
+                <Banknote strokeWidth={1.5} aria-hidden />
+                <div><dt>Price</dt><dd>{entry.price ? formatPrice(entry.price) : 'Not noted'}</dd></div>
+              </div>
+              <div className="fact">
+                <PenLine strokeWidth={1.5} aria-hidden />
+                <div><dt>Logged by</dt><dd>{isCreator ? 'You' : `@${entry.createdBy?.username ?? 'someone'}`}</dd></div>
+              </div>
+            </dl>
+          )}
+        {editing !== 'entry' && entry.with.length > 0 && (
+          <p className="faint small">Shared with everyone who was there, so edits show up for them too.</p>
+        )}
+      </section>
 
-      <button className="btn danger" onClick={remove}>Remove stamp</button>
-    </div>
+      <section className="detail-section">
+        <div className="spread"><h2>Who was there</h2>{isCreator && editButton('companions')}</div>
+        {editing === 'companions'
+          ? <CompanionsForm stamp={stamp} onSaved={saved} onCancel={() => setEditing('none')} />
+          : entry.with.length === 0
+            ? <p className="faint">Just you.</p>
+            : (
+              <ul className="people">
+                {entry.with.map((u) => (
+                  <li key={u.id} className="person-row">
+                    <span className="avatar" aria-hidden>{u.username[0]?.toUpperCase()}</span>@{u.username}
+                  </li>
+                ))}
+              </ul>
+            )}
+      </section>
+
+      <section className="detail-section">
+        <button className="text-btn danger" onClick={remove}><Trash2 strokeWidth={1.75} />Remove stamp</button>
+      </section>
+    </main>
   )
 }
 
@@ -144,9 +140,9 @@ function useSave(onSaved: (s: Stamp) => void) {
 
 function FormButtons({ busy, onCancel }: { busy: boolean; onCancel: () => void }) {
   return (
-    <div className="row">
+    <div className="row" style={{ gap: 16 }}>
       <button className="btn" disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
-      <button type="button" className="btn ghost" onClick={onCancel}>Cancel</button>
+      <button type="button" className="text-btn" onClick={onCancel}>Cancel</button>
     </div>
   )
 }
@@ -179,7 +175,7 @@ function EntryForm({ stamp, onSaved, onCancel }: FormProps) {
   const submit = (ev: FormEvent) => { ev.preventDefault(); run(() => api.updateEntry(stamp.id, toEntryRequest(values))) }
   const errors = error?.fieldErrors ?? {}
   return (
-    <form className="stack" onSubmit={submit} noValidate>
+    <form className="stack" style={{ gap: 16 }} onSubmit={submit} noValidate>
       {error && Object.keys(errors).length === 0 && <div className="alert">{error.message}</div>}
       <EntryFields values={values} onChange={setValues} errors={errors} />
       <FormButtons busy={busy} onCancel={onCancel} />
@@ -193,15 +189,15 @@ function CompanionsForm({ stamp, onSaved, onCancel }: FormProps) {
   const { busy, error, run } = useSave(onSaved)
   const submit = (e: FormEvent) => { e.preventDefault(); run(() => api.setCompanions(stamp.id, selected)) }
 
-  if (loadError) return <ErrorMessage error={loadError} />
-  if (!friends) return <Loading />
+  if (loadError) return <div className="alert">{loadError.message}</div>
+  if (!friends) return <p className="muted">Loading friends…</p>
   // People already tagged stay pickable even if you've since unfriended them.
   const options = [...friends, ...stamp.entry.with.filter((u) => !friends.some((f) => f.id === u.id))]
   return (
     <form className="stack" onSubmit={submit}>
       {error && <div className="alert">{error.message}</div>}
       <FriendPicker friends={options} selected={selected} onChange={setSelected} />
-      <p className="muted small" style={{ margin: 0 }}>Unticking someone removes the stamp from their passport.</p>
+      <p className="faint small">Unticking someone removes the stamp from their passport.</p>
       <FormButtons busy={busy} onCancel={onCancel} />
     </form>
   )

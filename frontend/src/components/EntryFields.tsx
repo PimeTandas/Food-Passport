@@ -1,3 +1,5 @@
+import { House, Utensils } from 'lucide-react'
+
 export interface EntryValues {
   dishName: string
   placeName: string
@@ -17,41 +19,47 @@ const COMMON_CURRENCIES = ['EUR', 'GBP', 'USD', 'JPY', 'CNY', 'KRW', 'THB', 'INR
 /** The shared details of a food entry: used when stamping and when editing. */
 export function EntryFields({ values, onChange, errors }: Props) {
   const set = <K extends keyof EntryValues>(key: K, value: EntryValues[K]) => onChange({ ...values, [key]: value })
+  const priceError = errors['price.amount'] ?? errors['price.currency'] ?? errors.price
   return (
     <>
       <label className="field">
-        <span>What did you eat?</span>
-        <input className="input" placeholder="e.g. Tonkotsu ramen" value={values.dishName} maxLength={200}
+        <span className="label">Dish</span>
+        <input className="input" placeholder="Tonkotsu ramen" value={values.dishName} maxLength={200}
                onChange={(e) => set('dishName', e.target.value)} />
         {errors.dishName && <span className="field-error">{errors.dishName}</span>}
       </label>
 
       <div className="field">
-        <span>Where?</span>
-        <div className="toggle" role="group" aria-label="Homemade or eaten out">
-          <button type="button" aria-pressed={!values.homemade} onClick={() => set('homemade', false)}>🍽️ Eaten out</button>
-          <button type="button" aria-pressed={values.homemade} onClick={() => set('homemade', true)}>🏠 Homemade</button>
+        <span className="label">Where was it made?</span>
+        <div className="choice-tiles" role="group" aria-label="Eaten out or homemade">
+          <button type="button" className="choice-tile" aria-pressed={!values.homemade} onClick={() => set('homemade', false)}>
+            <Utensils strokeWidth={1.5} />Eaten out
+          </button>
+          <button type="button" className="choice-tile" aria-pressed={values.homemade} onClick={() => set('homemade', true)}>
+            <House strokeWidth={1.5} />Homemade
+          </button>
         </div>
-        <input className="input" value={values.placeName} maxLength={200}
-               placeholder={values.homemade ? "e.g. Mum's kitchen" : 'e.g. Ichiran, Tokyo'}
-               aria-label="Place" onChange={(e) => set('placeName', e.target.value)} />
       </div>
 
+      <label className="field">
+        <span className="label">{values.homemade ? 'Kitchen' : 'Place'}</span>
+        <input className="input" value={values.placeName} maxLength={200}
+               placeholder={values.homemade ? "Mum's kitchen" : 'Ichiran, Shibuya'}
+               onChange={(e) => set('placeName', e.target.value)} />
+      </label>
+
       <div className="field">
-        <span>Price <span className="muted small">(optional)</span></span>
-        <div className="row" style={{ flexWrap: 'nowrap' }}>
+        <span className="label">Price · optional</span>
+        <div className="input-group">
           <input className="input" type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00"
                  aria-label="Amount" value={values.priceAmount} onChange={(e) => set('priceAmount', e.target.value)} />
-          <input className="input" style={{ maxWidth: 100, textTransform: 'uppercase' }} list="currencies"
-                 maxLength={3} aria-label="Currency" placeholder="EUR" value={values.priceCurrency}
-                 onChange={(e) => set('priceCurrency', e.target.value.toUpperCase())} />
+          <input className="input" list="currencies" maxLength={3} aria-label="Currency" placeholder="EUR"
+                 value={values.priceCurrency} onChange={(e) => set('priceCurrency', e.target.value.toUpperCase())} />
           <datalist id="currencies">
             {COMMON_CURRENCIES.map((c) => <option key={c} value={c} />)}
           </datalist>
         </div>
-        {(errors['price.amount'] || errors['price.currency'] || errors.price) && (
-          <span className="field-error">{errors['price.amount'] ?? errors['price.currency'] ?? errors.price}</span>
-        )}
+        {priceError && <span className="field-error">{priceError}</span>}
       </div>
     </>
   )

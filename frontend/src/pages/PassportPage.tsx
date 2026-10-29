@@ -1,88 +1,116 @@
+import { ChevronRight, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client'
+import type { CountryListItem } from '../api/types'
 import { ErrorMessage, Loading } from '../components/Status'
+import { mrzLines, pageLabel, passportDate, passportNumber } from '../format'
 import { useAsync } from '../useAsync'
 
 const CONTINENTS = ['Africa', 'Asia', 'Europe', 'North America', 'South America', 'Oceania', 'Antarctica']
 
 export function PassportPage() {
-  // Both requests run at the same time; we wait for both.
+  // Three requests at once; the page waits for all of them.
   const { data, error, loading, reload } = useAsync(
-    () => Promise.all([api.passport(), api.countries()]), [])
+    () => Promise.all([api.me(), api.passport(), api.countries()]), [])
   const [query, setQuery] = useState('')
-  const [onlyStamped, setOnlyStamped] = useState(false)
   const [continent, setContinent] = useState<string | null>(null)
 
-  const countries = useMemo(() => {
-    if (!data) return []
+  const [visited, unvisited] = useMemo(() => {
+    if (!data) return [[], []] as [Row[], Row[]]
     const q = query.trim().toLowerCase()
-    return data[1]
-      .filter((c) => !onlyStamped || c.stampCount > 0)
+    // Page numbers come from the alphabetical order, before any filtering.
+    const rows = data[2].map((c, i) => ({ ...c, page: i + 1 }))
       .filter((c) => !continent || c.continent === continent)
       .filter((c) => !q || c.name.toLowerCase().includes(q) || c.code.toLowerCase() === q)
-      // stamped countries first, then A-Z
-      .sort((a, b) => Number(b.stampCount > 0) - Number(a.stampCount > 0) || a.name.localeCompare(b.name))
-  }, [data, query, onlyStamped, continent])
+    return [rows.filter((c) => c.stampCount > 0), rows.filter((c) => c.stampCount === 0)]
+  }, [data, query, continent])
 
   if (loading && !data) return <Loading text="Opening your passport…" />
   if (error) return <ErrorMessage error={error} onRetry={reload} />
   if (!data) return null
 
-  const [summary] = data
-  const percent = Math.round((summary.countriesStamped / summary.totalCountries) * 100)
+  const [me, summary] = data
+  const continents = Object.keys(summary.countriesStampedPerContinent).length
+  const [mrz1, mrz2] = mrzLines(me.username, me.id, me.createdAt, summary.totalStamps)
 
   return (
-    <div className="stack" style={{ gap: 18 }}>
-      <section className="summary" aria-label="Passport summary">
-        <div><strong>{summary.totalStamps}</strong><span>stamps</span></div>
-        <div><strong>{summary.countriesStamped}</strong><span>countries</span></div>
-        <div><strong>{Object.keys(summary.countriesStampedPerContinent).length}</strong><span>continents</span></div>
-        <div className="progress" title={`${percent}% of the world`}>
-          <div style={{ width: `${Math.max(percent, summary.countriesStamped ? 2 : 0)}%` }} />
+    <main className="page">
+      <section className="datapage" aria-label="Passport data page">
+        <header className="datapage-head">
+          <strong>FOOD PASSPORT</strong>
+          <span>Passeport gourmand</span>
+        </header>
+        <div className="datapage-body">
+          <div className="portrait" aria-hidden>{me.username[0]?.toUpperCase()}</div>
+          <dl className="datafields">
+            <div className="wide"><dt className="label">Holder / Titulaire</dt><dd className="holder">{me.username}</dd></div>
+            <div><dt className="label">Passport no.</dt><dd>{passportNumber(me.id)}</dd></div>
+            <div><dt className="label">Date of issue</dt><dd>{passportDate(me.createdAt)}</dd></div>
+            <div><dt className="label">Stamps</dt><dd>{summary.totalStamps}</dd></div>
+            <div><dt className="label">Countries</dt><dd>{summary.countriesStamped} / {summary.totalCountries}</dd></div>
+            <div><dt className="label">Continents</dt><dd>{continents} / 7</dd></div>
+          </dl>
         </div>
-        <span style={{ gridColumn: '1 / -1' }}>
-          {summary.countriesStamped === 0
-            ? 'Your passport is empty. Pick a country and stamp your first dish!'
-            : `${summary.countriesStamped} of ${summary.totalCountries} countries tasted`}
-        </span>
+        <div className="mrz" aria-hidden>{mrz1}{'\n'}{mrz2}</div>
       </section>
 
-      <div className="stack">
-        <input className="input" type="search" placeholder="Search countries…" aria-label="Search countries"
-               value={query} onChange={(e) => setQuery(e.target.value)} />
-        <div className="spread">
-          <div className="toggle" role="group" aria-label="Show">
-            <button aria-pressed={!onlyStamped} onClick={() => setOnlyStamped(false)}>All</button>
-            <button aria-pressed={onlyStamped} onClick={() => setOnlyStamped(true)}>Stamped</button>
-          </div>
-          <span className="muted small">{countries.length} shown</span>
+      <div className="stack" style={{ marginTop: 32 }}>
+        <div className="input-icon">
+          <Search strokeWidth={1.75} />
+          <input className="input" type="search" placeholder="Search 249 countries" aria-label="Search countries"
+                 value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <div className="chips" role="group" aria-label="Continent">
-          <button className="chip" aria-pressed={continent === null} onClick={() => setContinent(null)}>🌍 Everywhere</button>
+        <div className="filters" role="group" aria-label="Continent">
+          <button className="filter" aria-pressed={continent === null} onClick={() => setContinent(null)}>All</button>
           {CONTINENTS.map((c) => (
-            <button key={c} className="chip" aria-pressed={continent === c}
-                    onClick={() => setContinent(continent === c ? null : c)}>
-              {c}{summary.countriesStampedPerContinent[c] ? ` · ${summary.countriesStampedPerContinent[c]}` : ''}
-            </button>
+            <button key={c} className="filter" aria-pressed={continent === c}
+                    onClick={() => setContinent(continent === c ? null : c)}>{c}</button>
           ))}
         </div>
       </div>
 
-      {countries.length === 0 ? (
-        <div className="empty"><div className="big">🧭</div>No countries match.</div>
-      ) : (
-        <div className="country-grid">
-          {countries.map((c) => (
-            <Link key={c.code} to={`/countries/${c.code}`}
-                  className={`country-card${c.stampCount ? '' : ' unstamped'}`}>
-              <span className="flag" aria-hidden>{c.flag}</span>
-              <span className="name">{c.name}</span>
-              {c.stampCount > 0 && <span className="mini-stamp" aria-label={`${c.stampCount} stamps`}>×{c.stampCount}</span>}
-            </Link>
-          ))}
-        </div>
+      {visited.length > 0 && (
+        <>
+          <div className="section-head">
+            <h2>Your pages</h2>
+            <span className="faint small">{visited.length} {visited.length === 1 ? 'country' : 'countries'}</span>
+          </div>
+          <CountryList rows={visited} />
+        </>
       )}
-    </div>
+
+      <div className="section-head">
+        <h2>{visited.length > 0 || summary.totalStamps > 0 ? 'Still to taste' : 'Where to first?'}</h2>
+        <span className="faint small">{unvisited.length}</span>
+      </div>
+      {unvisited.length === 0
+        ? <p className="muted">Nothing matches “{query}”.</p>
+        : <CountryList rows={unvisited} />}
+    </main>
+  )
+}
+
+type Row = CountryListItem & { page: number }
+
+function CountryList({ rows }: { rows: Row[] }) {
+  return (
+    <ul className="country-list">
+      {rows.map((c) => (
+        <li key={c.code}>
+          <Link to={`/countries/${c.code}`} className={`country-row${c.stampCount ? '' : ' unvisited'}`}>
+            <span className="flag" aria-hidden>{c.flag}</span>
+            <span>
+              <span className="name">{c.name}</span>
+              <span className="sub" style={{ display: 'block' }}>{c.continent}</span>
+            </span>
+            {c.stampCount > 0
+              ? <span className="count">{c.stampCount} {c.stampCount === 1 ? 'stamp' : 'stamps'}</span>
+              : <span className="page-no">{pageLabel(c.page)}</span>}
+            <ChevronRight strokeWidth={1.75} aria-hidden />
+          </Link>
+        </li>
+      ))}
+    </ul>
   )
 }

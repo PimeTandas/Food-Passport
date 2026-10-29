@@ -2,9 +2,10 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
+import { Crest } from '../components/Crest'
 import { ThemeToggle } from '../components/ThemeToggle'
 
-/** One component for both screens: the only difference is the username field and which API call. */
+/** The passport cover. One component for both screens: register just adds a username. */
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const { user, login, register } = useAuth()
   const navigate = useNavigate()
@@ -16,7 +17,6 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const [busy, setBusy] = useState(false)
 
   if (user) return <Navigate to="/" replace />
-
   const isRegister = mode === 'register'
 
   async function submit(e: FormEvent) {
@@ -38,54 +38,54 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     error?.fieldErrors[name] && <span className="field-error">{error.fieldErrors[name]}</span>
 
   return (
-    <div className="auth-wrap">
-      <div className="auth-theme"><ThemeToggle /></div>
-      <div className="passport-cover">
-        <div className="emblem" aria-hidden>🍜</div>
-        <h1>Food Passport</h1>
-        <div className="subtitle">BON APPÉTIT</div>
-
-        <form className="card stack" onSubmit={submit} noValidate>
-          <h2>{isRegister ? 'Get your passport' : 'Welcome back'}</h2>
-          {error && Object.keys(error.fieldErrors).length === 0 && <div className="alert">{error.message}</div>}
-
-          <label className="field">
-            <span>Email</span>
-            <input className="input" type="email" autoComplete="email" required
-                   value={email} onChange={(e) => setEmail(e.target.value)} />
-            {fieldError('email')}
-          </label>
-
-          {isRegister && (
-            <label className="field">
-              <span>Username</span>
-              <input className="input" autoComplete="username" autoCapitalize="none" required
-                     value={username} onChange={(e) => setUsername(e.target.value)} />
-              <span className="muted small">Friends find you by this. Letters, numbers, _ and .</span>
-              {fieldError('username')}
-            </label>
-          )}
-
-          <label className="field">
-            <span>Password</span>
-            <input className="input" type="password" required
-                   autoComplete={isRegister ? 'new-password' : 'current-password'}
-                   value={password} onChange={(e) => setPassword(e.target.value)} />
-            {isRegister && <span className="muted small">At least 8 characters.</span>}
-            {fieldError('password')}
-          </label>
-
-          <button className="btn block" disabled={busy}>
-            {busy ? 'One moment…' : isRegister ? 'Issue my passport' : 'Log in'}
-          </button>
-
-          <p className="muted small" style={{ textAlign: 'center', margin: 0 }}>
-            {isRegister
-              ? <>Already have one? <Link to="/login">Log in</Link></>
-              : <>New here? <Link to="/register">Create an account</Link></>}
-          </p>
-        </form>
+    <div className="cover">
+      <div className="cover-theme"><ThemeToggle /></div>
+      <Crest className="cover-crest" withText />
+      <div className="cover-title">
+        <h1>FOOD PASSPORT</h1>
+        <p>Passeport gourmand</p>
       </div>
+
+      <form className="auth-card" onSubmit={submit} noValidate>
+        <h2>{isRegister ? 'Apply for a passport' : 'Welcome back'}</h2>
+        {error && Object.keys(error.fieldErrors).length === 0 && <div className="alert">{error.message}</div>}
+
+        <label className="field">
+          <span className="label">Email</span>
+          <input className="input" type="email" autoComplete="email" required
+                 value={email} onChange={(e) => setEmail(e.target.value)} />
+          {fieldError('email')}
+        </label>
+
+        {isRegister && (
+          <label className="field">
+            <span className="label">Username</span>
+            <input className="input" autoComplete="username" autoCapitalize="none" required
+                   value={username} onChange={(e) => setUsername(e.target.value)} />
+            <span className="faint small">How friends find you. Letters, numbers, _ and .</span>
+            {fieldError('username')}
+          </label>
+        )}
+
+        <label className="field">
+          <span className="label">Password</span>
+          <input className="input" type="password" required
+                 autoComplete={isRegister ? 'new-password' : 'current-password'}
+                 value={password} onChange={(e) => setPassword(e.target.value)} />
+          {isRegister && <span className="faint small">At least 8 characters.</span>}
+          {fieldError('password')}
+        </label>
+
+        <button className="btn block" disabled={busy}>
+          {busy ? 'One moment…' : isRegister ? 'Issue my passport' : 'Log in'}
+        </button>
+
+        <p className="auth-switch">
+          {isRegister
+            ? <>Already have one? <Link to="/login">Log in</Link></>
+            : <>New here? <Link to="/register">Apply for a passport</Link></>}
+        </p>
+      </form>
     </div>
   )
 }

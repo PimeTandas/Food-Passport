@@ -1,3 +1,4 @@
+import { ArrowLeft, Stamp as StampIcon } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
@@ -5,6 +6,7 @@ import { EntryFields, toEntryRequest, type EntryValues } from '../components/Ent
 import { FriendPicker } from '../components/FriendPicker'
 import { StarRating } from '../components/StarRating'
 import { ErrorMessage, Loading } from '../components/Status'
+import { passportDate } from '../format'
 import { useAsync } from '../useAsync'
 
 const LAST_CURRENCY = 'foodpassport.lastCurrency'
@@ -37,6 +39,7 @@ export function NewStampPage() {
     e.preventDefault()
     if (!entry.dishName.trim()) {
       setSubmitError(new ApiError(400, 'Some fields need fixing', { dishName: 'Tell us what you ate' }))
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
     setBusy(true)
@@ -44,15 +47,12 @@ export function NewStampPage() {
     try {
       const request = toEntryRequest(entry)
       const stamp = await api.createStamp(country.code, {
-        ...request,
-        rating: rating ?? undefined,
-        notes: notes || undefined,
-        withFriendIds: friendIds,
+        ...request, rating: rating ?? undefined, notes: notes || undefined, withFriendIds: friendIds,
       })
       if (request.price) {
         try { localStorage.setItem(LAST_CURRENCY, request.price.currency) } catch { /* not important */ }
       }
-      // Back to the page, where the new stamp "lands" with an animation.
+      // Back to the page, where the new stamp lands with a small animation.
       navigate(`/countries/${country.code}`, { state: { justStamped: stamp.id } })
     } catch (err) {
       setSubmitError(err instanceof ApiError ? err : new ApiError(0, 'Could not reach the server'))
@@ -62,40 +62,48 @@ export function NewStampPage() {
 
   const errors = submitError?.fieldErrors ?? {}
   return (
-    <form className="stack" style={{ gap: 18 }} onSubmit={submit} noValidate>
-      <Link to={`/countries/${country.code}`} className="muted small">← {country.name}</Link>
-      <h1>{country.flag} Stamp {country.name}</h1>
+    <form onSubmit={submit} noValidate>
+      <main className="page with-action-bar">
+        <Link to={`/countries/${country.code}`} className="back"><ArrowLeft strokeWidth={1.75} />{country.name}</Link>
+        <div className="country-meta">{country.flag} {country.code} · {passportDate(new Date().toISOString())}</div>
+        <h1 style={{ marginBottom: 8 }}>New stamp</h1>
 
-      {submitError && Object.keys(errors).length === 0 && <div className="alert">{submitError.message}</div>}
+        {submitError && Object.keys(errors).length === 0 && <div className="alert">{submitError.message}</div>}
 
-      <div className="card stack">
-        <EntryFields values={entry} onChange={setEntry} errors={errors} />
-      </div>
+        <section className="form-section" aria-label="The meal">
+          <EntryFields values={entry} onChange={setEntry} errors={errors} />
+        </section>
 
-      <div className="card stack">
-        <div className="field">
-          <span>Your rating</span>
+        <section className="form-section">
+          <div>
+            <h2>Your verdict</h2>
+            <p className="faint small">Only you see your rating and notes.</p>
+          </div>
           <StarRating value={rating} onChange={setRating} />
-        </div>
-        <label className="field">
-          <span>Your notes</span>
-          <textarea className="input" maxLength={2000} placeholder="How was it? Would you have it again?"
-                    value={notes} onChange={(e) => setNotes(e.target.value)} />
-        </label>
-        <p className="muted small" style={{ margin: 0 }}>Only you see your rating and notes.</p>
-      </div>
+          <label className="field">
+            <span className="label">Notes</span>
+            <textarea className="input" maxLength={2000} placeholder="How was it? Would you have it again?"
+                      value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </label>
+        </section>
 
-      <div className="card stack">
-        <div className="field">
-          <span>Who were you with?</span>
+        <section className="form-section">
+          <div>
+            <h2>Who were you with?</h2>
+            <p className="faint small">They'll get this stamp in their passport too.</p>
+          </div>
           <FriendPicker friends={friends} selected={friendIds} onChange={setFriendIds} />
-        </div>
-        {friendIds.length > 0 && (
-          <p className="muted small" style={{ margin: 0 }}>They'll get this stamp in their passport too.</p>
-        )}
-      </div>
+        </section>
+      </main>
 
-      <button className="btn stamp-it block" disabled={busy}>{busy ? 'Stamping…' : '🖋️ Stamp it'}</button>
+      <div className="action-bar">
+        <div className="action-bar-inner">
+          <span className="small muted">
+            {friendIds.length > 0 ? `You + ${friendIds.length} ${friendIds.length === 1 ? 'friend' : 'friends'}` : country.name}
+          </span>
+          <button className="btn" disabled={busy}><StampIcon strokeWidth={1.75} />{busy ? 'Stamping…' : 'Stamp it'}</button>
+        </div>
+      </div>
     </form>
   )
 }
