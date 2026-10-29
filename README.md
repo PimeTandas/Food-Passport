@@ -35,6 +35,17 @@ cd backend && mvn spring-boot:run       # 2. API on :8080
 cd frontend && npm install && npm run dev   # 3. website on http://localhost:5173
 ```
 
+**Want to look around straight away?** Start the backend in demo mode instead:
+
+```bash
+cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+Then log in as **demo@foodpassport.test** / **demo-password**. The demo account already has stamps in
+six countries and two friends (`sam`, `alex`), and a third user (`jordan`) you can send a friend
+request to. Other demo logins: `sam@`, `alex@`, `jordan@foodpassport.test`, same password.
+Demo mode only ever runs locally; the deployed server never enables it.
+
 Open http://localhost:5173 (on your phone too, if it's on the same Wi-Fi: run `npm run dev -- --host`
 and use your computer's IP address).
 
