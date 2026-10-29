@@ -44,8 +44,12 @@ src/
   auth/       AuthContext: who is logged in; the token is kept in localStorage
   components/ Layout (top bar + login guard), InkStamp, StarRating, EntryFields, FriendPicker
   pages/      AuthPage, PassportPage, CountryPage, NewStampPage, StampDetailPage
-  styles.css  design tokens at the top (colours, inks, radius)
+  styles.css  design tokens at the top (colours, inks, radius), with a light and a dark set
+  theme.ts    light / dark / follow-the-device, remembered per browser
 ```
+
+The look is iOS-inspired: frosted header, large titles, segmented controls, and the ink stamps as the
+signature passport touch. Tap the round button in the header to switch theme.
 
 Screens: sign up / log in → passport (summary, search, continent filters, country grid) →
 country page (its stamps) → stamp the page (dish, place, homemade, price, rating, notes, friends) →

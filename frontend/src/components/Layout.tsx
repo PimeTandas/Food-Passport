@@ -1,5 +1,6 @@
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { ThemeToggle } from './ThemeToggle'
 
 /** Top bar + the current page. Also the gatekeeper: no login, no passport. */
 export function Layout() {
@@ -16,8 +17,11 @@ export function Layout() {
           <span className="brand-emblem" aria-hidden>🍜</span>
           <span>Food Passport<small>BON APPÉTIT</small></span>
         </Link>
-        <div className="row">
-          <span className="small" style={{ opacity: .85 }}>@{user.username}</span>
+        <div className="topbar-actions">
+          <ThemeToggle />
+          <span className="avatar" title={`@${user.username}`} aria-label={`Logged in as ${user.username}`}>
+            {user.username[0]?.toUpperCase()}
+          </span>
           <button className="btn ghost small" onClick={logout}>Log out</button>
         </div>
       </header>

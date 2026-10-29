@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 /** One component for both screens: the only difference is the username field and which API call. */
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
@@ -38,9 +39,10 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 
   return (
     <div className="auth-wrap">
+      <div className="auth-theme"><ThemeToggle /></div>
       <div className="passport-cover">
         <div className="emblem" aria-hidden>🍜</div>
-        <h1>FOOD PASSPORT</h1>
+        <h1>Food Passport</h1>
         <div className="subtitle">BON APPÉTIT</div>
 
         <form className="card stack" onSubmit={submit} noValidate>
